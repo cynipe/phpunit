@@ -124,6 +124,11 @@ class PHPUnit_Util_Log_JUnit extends PHPUnit_Util_Printer implements PHPUnit_Fra
     protected $attachCurrentTestCase = TRUE;
 
     /**
+     * @var    boolean
+     */
+    protected $mbstringLoaded = FALSE;
+
+    /**
      * Constructor.
      *
      * @param  mixed   $out
@@ -140,6 +145,7 @@ class PHPUnit_Util_Log_JUnit extends PHPUnit_Util_Printer implements PHPUnit_Fra
         parent::__construct($out);
 
         $this->logIncompleteSkipped = $logIncompleteSkipped;
+        $this->mbstringLoaded = extension_loaded('mbstring');
     }
 
     /**
@@ -287,7 +293,10 @@ class PHPUnit_Util_Log_JUnit extends PHPUnit_Util_Printer implements PHPUnit_Fra
     public function startTestSuite(PHPUnit_Framework_TestSuite $suite)
     {
         $testSuite = $this->document->createElement('testsuite');
-        $testSuite->setAttribute('name', $suite->getName());
+        $testNameForXML = $this->mbstringLoaded
+            ? mb_convert_encoding($suite->getName(), "UTF-8")
+            : $suite->getName();
+        $testSuite->setAttribute('name', $testNameForXML);
 
         if (class_exists($suite->getName(), FALSE)) {
             try {
@@ -397,7 +406,10 @@ class PHPUnit_Util_Log_JUnit extends PHPUnit_Util_Printer implements PHPUnit_Fra
     {
         if (!$test instanceof PHPUnit_Framework_Warning) {
             $testCase = $this->document->createElement('testcase');
-            $testCase->setAttribute('name', $test->getName());
+            $testNameForXML = $this->mbstringLoaded
+                ? mb_convert_encoding($test->getName(), "UTF-8")
+                : $test->getName();
+            $testCase->setAttribute('name', $testNameForXML);
 
             if ($test instanceof PHPUnit_Framework_TestCase) {
                 $class      = new ReflectionClass($test);
